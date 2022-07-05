@@ -1,0 +1,265 @@
+----BOP statement from final config tables
+
+-- only W1 due to the large amount of data
+----SBOPBR6
+---BOP statement
+
+select order_num, case when order_num = '1' then 'CURRENT_ACCOUNT' when order_num ='2' then 'SERVICES' when order_num = '3' then 'PRIMARY INCOME' when order_num = '4' then 'SECONDARY INCOME' when order_num = '5' then 'FINANCIAL ACCOUNT' when order_num = '6' then 'DIRECT INVESTMENT' when order_num = '7' then 'PORTFOLIO INVESTMENT' when order_num = '8' then 'FINANCIAL DERIVATIVES' when order_num = '9' then 'OTHER INVESTMENT' when order_num = '10' then 'RESERVE ASSETS' when order_num = '11' then 'NET ERRORS AND OMISSIONS' end as order_num_desc,
+case when (order_num = '3' and functional_cat in ('D','D1','D2','D3','U1','U2','U3','P','O','R')) then functional_cat_desc||', '||functional_cat else int_acc_item_desc||', '||int_acc_item end as int_acc_item, --for primary income where functional cat has DI,PI,OI,RA only
+case when (order_num = '3' and functional_cat in ('D','D1','D2','D3','U1','U2','U3','P','O','R')) then int_acc_item_desc||', '||int_acc_item else functional_cat_desc||', '||functional_cat end as functional_cat, --for primary income where functional cat has DI,PI,OI,RA only
+case when (order_num = '3' and functional_cat in ('D','D1','D2','D3','U1','U2','U3','P','O','R')) then int_acc_item else null end as int_acc_item_primary, 
+case when (order_num = '3' and functional_cat in ('D','D1','D2','D3','U1','U2','U3','P','O','R')) then functional_cat else null end as functional_cat_primary, --for primary income where functional cat has DI,PI,OI,RA only
+INSTR_ASSET,instr_asset_desc||', '||instr_asset instr_asset_desc,ref_Sector_Desc||', '||ref_sector ref_sector,counterpart_sector_desc||', '||counterpart_Sector counterpart_sector,counterpart_area_desc||', '||counterpart_area counterpart_area,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,case when accounting_entry = 'B' then 'Balance' when accounting_entry = 'C' then 'Credit' when accounting_entry = 'D' then 'Debit' when accounting_entry = 'N' then 'Net' when accounting_entry = 'A' then 'Assets' else 'Liabilities' end as ACCOUNTING_ENTRY_DESC,MATURITY,maturity_desc||', '||MATURITY maturity_desc,VALUATION,OBS_DATE,OBS_VALUE,OBS_STATUS,NAME,ENTITYID,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION from(
+
+--Current Account total
+select '1' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_CURR_ACC_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and int_acc_item = 'CA') a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--services
+select '2' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_SERVICES_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and int_acc_item IN ('S','SA','SAY','SAZ','SB','SC','SCA','SCAZ','SCB','SCC','SC1','SC11','SC11Z','SC12','SC13','SC2','SC21','SC21Z','SC22','SC23','SC3','SC31','SC31Z','SC32','SC33','SC4',
+'SD','SDA','SDA1','SDA2','SDB','SDB1','SDB2','SDB3','SD1','SD2','SD3','SD4','SD5','SD5Z','SD5Y','SE','SE1','SE2','SF','SF1','SF2','SF3','SF4',
+'SG','SG1','SG2','SH','SI','SI1','SI2','SI3','SJ','SJ1','SJ2','SJ3','SK','SK1','SK2','SL','SDZ','SN')) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--Primary income
+select '3' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_PRI_ACC1_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+ /*and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--secondary income
+select '4' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_SEC_ACC_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--Financial account
+
+--select DISTINCT FLOW_STOCK_ENTRY from t5040_oltp.SBOPBR6_FA_TOTAL_FINALAL
+select '5' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_TOTAL_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA') and instr_asset not in ('FNED','FGED')) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--Direct investment
+select '6' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_DIRINV_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA') and currency_denom = '_T' /*and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--portfolio investment
+select '7' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_PORINV_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA') and currency_denom = '_T' /*and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--Financial derivatives
+select '8' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_FINDER_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA')) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--Other investment
+select '9' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_OTHINV_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA') and currency_denom = '_T' /*and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--Other investment
+select '10' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_RES_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA') and currency_denom = '_T' /*and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+union all
+--EO
+select '11' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_CKA_EO_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry IN ('T','K7A','K7B','KA') and int_acc_item = 'EO') a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue
+) where counterpart_Area = 'W1' order by order_num,int_acc_item,functional_cat,instr_asset,ref_sector,counterpart_sector,counterpart_area,accounting_entry --closing all
+;
+
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+
+
+-----IIP
+--Financial account
+select order_num, case when order_num = '1' then 'FINANCIAL ACCOUNT' when order_num = '2' then 'DIRECT INVESTMENT' when order_num = '3' then 'PORTFOLIO INVESTMENT' when order_num = '4' then 'FINANCIAL DERIVATIVES' when order_num = '5' then 'OTHER INVESTMENT' when order_num = '6' then 'RESERVE ASSETS' end as order_num_desc,
+int_acc_item_desc||', '||int_acc_item int_acc_item,functional_cat_desc||', '||functional_cat functional_cat,INSTR_ASSET,instr_asset_desc||', '||instr_asset instr_asset_desc,ref_Sector_Desc||', '||ref_sector ref_sector,counterpart_sector_desc||', '||counterpart_Sector counterpart_sector,counterpart_area_desc||', '||counterpart_area counterpart_area,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,
+case when accounting_entry = 'N' then 'Net' when accounting_entry = 'A' then 'Assets' else 'Liabilities' end as ACCOUNTING_ENTRY_DESC,
+MATURITY,maturity_desc||', '||maturity maturity_desc,currency_denom_desc||', '||currency_denom currency_denom,VALUATION,OBS_DATE,OBS_VALUE,OBS_STATUS,NAME,ENTITYID,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION from(
+
+select '1' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,i.description currency_denom_desc,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_TOTAL_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry = 'LE' and instr_asset not in ('FNED','FGED')) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue 
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('CURRENCY')) i on a.currency_denom = i.elementvalue 
+union all
+--Direct investment
+select '2' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,i.description currency_denom_desc,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_DIRINV_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry = 'LE' /*and currency_denom = '_T' and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue 
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('CURRENCY')) i on a.currency_denom = i.elementvalue 
+union all
+--portfolio investment
+select '3' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,i.description currency_denom_desc,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_PORINV_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry = 'LE' /*and currency_denom = '_T' and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue 
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('CURRENCY')) i on a.currency_denom = i.elementvalue 
+union all
+--Financial derivatives
+select '4' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,i.description currency_denom_desc,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_FINDER_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry = 'LE') a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue 
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('CURRENCY')) i on a.currency_denom = i.elementvalue 
+union all
+--Other investment
+select '5' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,i.description currency_denom_desc,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_OTHINV_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry = 'LE' /*and currency_denom = '_T' and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue 
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('CURRENCY')) i on a.currency_denom = i.elementvalue 
+union all
+--Other investment
+select '6' order_num,FREQ,COUNTERPART_AREA,b.description counterpart_area_desc,REF_SECTOR,c.description ref_Sector_Desc,COUNTERPART_SECTOR,g.description counterpart_sector_desc,FLOW_STOCK_ENTRY,ACCOUNTING_ENTRY,INT_ACC_ITEM,d.description int_acc_item_desc,FUNCTIONAL_CAT,e.description functional_cat_desc,INSTR_ASSET,f.description instr_asset_desc,MATURITY,h.description maturity_desc,UNIT_MEASURE,CURRENCY_DENOM,i.description currency_denom_desc,VALUATION,COMP_METHOD,OBS_DATE,OBS_VALUE,NAME,ENTITYID,OBS_STATUS,RESIDENCY,CBMNACE,FURTHER_CLASSIFICATION 
+from 
+(select * from t5040_oltp.SBOPBR6_FA_RES_FINAL a where obs_date between date '2022-01-31' and date '2022-03-31' and ref_sector = 'S121' and (counterpart_area in (select elementvalue from t5040_inq.elementlist where setid = 'GEOAREA_105') or counterpart_area in ('I8','J8','B5','D5','B6','D6','W1')) and obs_value <> 0 --update table
+and flow_stock_entry = 'LE' /*and currency_denom = '_T' and maturity not in ('L','S','LL','LS')*/) a ---update filter
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('GEOAREA')) b on a.counterpart_area = b.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) c on a.ref_sector = c.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INT_ACC_ITEM')) d on a.int_acc_item = d.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('FUNCAT')) e on a.functional_cat = e.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('INSTR_ASSET')) f on a.instr_asset = f.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('SECTORSNSO')) g on a.counterpart_sector = g.elementvalue
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('TIMINT')) h on a.maturity = h.elementvalue 
+join (select * from t5040_inq.element where communityid = 'CBMALTA' and domainid in ('CURRENCY')) i on a.currency_denom = i.elementvalue 
+) where counterpart_area = 'W1' order by order_num,int_acc_item,functional_cat,instr_asset,ref_sector,counterpart_sector,counterpart_area,accounting_entry --closing all
